@@ -52,7 +52,7 @@ class Game(arcade.Window):
 
         #Ground set up list
         
-        for x in range(-150, 3000, 50):
+        for x in range(-150, 7500, 50):
             ground = arcade.Sprite("Geometry Dash/Assets/Images/ground.png", GROUND_SCALING)
             ground.center_x = x
             ground.center_y = 25
@@ -61,7 +61,21 @@ class Game(arcade.Window):
         self.physics_engine = arcade.PhysicsEnginePlatformer(self.player_sprite, self.ground_list, GRAVITY)
     
         coordinate_list = [[512,78],
-                           [768,78]]
+                           [780,78],
+                           [1000,78],
+                           [1239,78],
+                           [1500,78],
+                           [1750,78],
+                           [2050,78],
+                           [2280,78],
+                           [2510,78],
+                           [2780,78],
+                           [3100,78],
+                           [3290,78],
+                           [3560,78],
+                           [3830,78],
+                           [4210,78],
+                           [4560,78],]
         for coordinate in coordinate_list:
             ground = arcade.Sprite("Geometry Dash/Assets/Images/obstacle.png", OBSTACLE_SCALING)
             ground.position = coordinate
