@@ -34,12 +34,16 @@ class Game(arcade.Window):
         self.view_bottom = 0
         self.view_left = 0
 
+        self.score = 0
+
         arcade.set_background_color(arcade.csscolor.MAROON)
 
     def setup(self):
 
         self.view_bottom = 0
         self.view_left = 0
+
+        self.score = 0
 
         self.player_list = arcade.SpriteList()
         self.ground_list = arcade.SpriteList()
@@ -87,6 +91,10 @@ class Game(arcade.Window):
         self.ground_list.draw()
         self.player_list.draw()
 
+        score_text = f"Score: {self.score}"
+        arcade.draw_text(score_text, 10 + self.view_left, 460 + self.view_bottom,
+                         arcade.csscolor.WHITE, 20)
+
     def on_key_press(self, key, modifiers):
         if key == arcade.key.SPACE:
             if self.physics_engine.can_jump():
@@ -105,7 +113,7 @@ class Game(arcade.Window):
     def on_update(self, delta_time):
         self.player_sprite.change_x = PLAYER_MOVEMENT_SPEED
         self.physics_engine.update()
-
+        self.score +=1
         changed = False
 
         left_boundary = self.view_left + LEFT_VIEWPORT_MARGIN
