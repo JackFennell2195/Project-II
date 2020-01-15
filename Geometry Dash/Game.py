@@ -7,6 +7,7 @@ SCREEN_TITLE = "Geometry Dash"
 
 CHARACTER_SCALING = 1.1
 GROUND_SCALING = 1
+COLLISION_SCALING = 1.1
 OBSTACLE_SCALING = 1.1
 
 PLAYER_MOVEMENT_SPEED = 4
@@ -26,6 +27,7 @@ class Game(arcade.Window):
 
         self.player_list = None
         self.ground_list = None
+        self.collision_list = None
 
         self.player_sprite = None
 
@@ -47,6 +49,7 @@ class Game(arcade.Window):
 
         self.player_list = arcade.SpriteList()
         self.ground_list = arcade.SpriteList()
+        self.collision_list = arcade.SpriteList()
 
         #Player set up list
         self.player_sprite = arcade.Sprite("Geometry Dash/Assets/Images/player.png", CHARACTER_SCALING)
@@ -64,6 +67,7 @@ class Game(arcade.Window):
 
         self.physics_engine = arcade.PhysicsEnginePlatformer(self.player_sprite, self.ground_list, GRAVITY)
     
+        #Obstacles set up 
         coordinate_list = [[512,78],
                            [780,78],
                            [1000,78],
@@ -85,9 +89,31 @@ class Game(arcade.Window):
             ground.position = coordinate
             self.ground_list.append(ground)
 
+        #Collision set up
+        coordinate_list2 = [[511,76],
+                           [779,76],
+                           [999,76],
+                           [1238,76],
+                           [1499,76],
+                           [1749,76],
+                           [2049,76],
+                           [2279,76],
+                           [2509,76],
+                           [2779,76],
+                           [3099,76],
+                           [3289,76],
+                           [3559,76],
+                           [3829,76],
+                           [4209,76],
+                           [4559,76],]
+        for coordinate in coordinate_list2:
+            collision = arcade.Sprite("Geometry Dash/Assets/Images/collision.png", COLLISION_SCALING)
+            collision.position = coordinate
+            self.collision_list.append(collision)
     def on_draw(self):
 
         arcade.start_render()
+        self.collision_list.draw()
         self.ground_list.draw()
         self.player_list.draw()
 
@@ -115,6 +141,13 @@ class Game(arcade.Window):
         self.physics_engine.update()
         self.score +=1
         changed = False
+
+        player_hit_list = arcade.check_for_collision_with_list(self.player_sprite,self.collision_list)
+
+        for collision in player_hit_list:
+            self.score = 0
+            
+
 
         left_boundary = self.view_left + LEFT_VIEWPORT_MARGIN
         if self.player_sprite.left <left_boundary:
