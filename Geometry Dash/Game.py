@@ -20,36 +20,22 @@ BOTTOM_VIEWPORT_MARGIN = 50
 TOP_VIEWPORT_MARGIN = 100
 
 
-class Game(arcade.Window):
+class GameView(arcade.View):
 
     def __init__(self):
-        super().__init__(SCREEN_WIDTH, SCREEN_HEIGHT, SCREEN_TITLE)
+        super().__init__()
 
-        self.player_list = None
-        self.ground_list = None
-        self.collision_list = None
+        self.player_list = arcade.SpriteList()
+        self.ground_list = arcade.SpriteList()
+        self.collision_list = arcade.SpriteList()
 
         self.player_sprite = None
-
         self.physics_engine = None
 
         self.view_bottom = 0
         self.view_left = 0
 
         self.score = 0
-
-        arcade.set_background_color(arcade.csscolor.MAROON)
-
-    def setup(self):
-
-        self.view_bottom = 0
-        self.view_left = 0
-
-        self.score = 0
-
-        self.player_list = arcade.SpriteList()
-        self.ground_list = arcade.SpriteList()
-        self.collision_list = arcade.SpriteList()
 
         #Player set up list
         self.player_sprite = arcade.Sprite("Geometry Dash/Assets/Images/player.png", CHARACTER_SCALING)
@@ -110,6 +96,10 @@ class Game(arcade.Window):
             collision = arcade.Sprite("Geometry Dash/Assets/Images/collision.png", COLLISION_SCALING)
             collision.position = coordinate
             self.collision_list.append(collision)
+
+    def on_show(self):
+       arcade.set_background_color(arcade.csscolor.MAROON)
+
     def on_draw(self):
 
         arcade.start_render()
@@ -117,7 +107,7 @@ class Game(arcade.Window):
         self.ground_list.draw()
         self.player_list.draw()
 
-        score_text = f"Score: {self.score}"
+        score_text = f"Score: {self.window.score}"
         arcade.draw_text(score_text, 10 + self.view_left, 460 + self.view_bottom,
                          arcade.csscolor.WHITE, 20)
 
@@ -125,9 +115,6 @@ class Game(arcade.Window):
         if key == arcade.key.SPACE:
             if self.physics_engine.can_jump():
                 self.player_sprite.change_y = PLAYER_JUMP_SPEED
-        
-            
-     
 
     def on_key_release(self, key, modifiers):
 
@@ -139,14 +126,16 @@ class Game(arcade.Window):
     def on_update(self, delta_time):
         self.player_sprite.change_x = PLAYER_MOVEMENT_SPEED
         self.physics_engine.update()
-        self.score +=1
+        self.window.score +=1
         changed = False
 
         player_hit_list = arcade.check_for_collision_with_list(self.player_sprite,self.collision_list)
 
         for collision in player_hit_list:
-            self.score = 0
-            
+            game_over_view = GameOverView()
+            self.player_sprite.center_x = 50
+            self.player_sprite.center_y = 100
+            self.window.show_view(game_over_view)
 
 
         left_boundary = self.view_left + LEFT_VIEWPORT_MARGIN
@@ -176,9 +165,36 @@ class Game(arcade.Window):
             arcade.set_viewport(self.view_left,SCREEN_WIDTH+self.view_left,
                                 self.view_bottom,SCREEN_HEIGHT + self.view_bottom)
 
+
+class GameOverView(arcade.View):
+    def __init__(self):
+        super().__init__()
+
+    def on_show(self):
+        arcade.set_background_color(arcade.color.BLACK)
+    def on_draw(self):
+        arcade.start_render()
+        game_view = GameView()
+        arcade.draw_text("Game Over", 230 ,360,
+                        arcade.color.WHITE,50)
+        arcade.draw_text("Click to Restart", 230 ,280 ,
+                        arcade.color.WHITE,40)
+        score_text = f"Score: {self.window.score}"
+        arcade.draw_text(score_text, 230, 200,
+                         arcade.csscolor.WHITE, 30)
+
+    def on_mouse_press(self, _x, _y, _button, _modifiers):
+        self.window.score = 0
+        game_view = GameView()
+        self.window.show_view(game_view)
+
+
+
 def main():
-    window = Game()
-    window.setup()
+    window = arcade.Window(SCREEN_WIDTH,SCREEN_HEIGHT,SCREEN_TITLE)
+    window.score = 0 
+    game_view = GameView()
+    window.show_view(game_view)
     arcade.run()
 
 if __name__ == "__main__":
