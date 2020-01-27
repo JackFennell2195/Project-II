@@ -1,5 +1,6 @@
 import arcade 
-
+import tensorflow as tf
+import numpy as np
 #Constants
 SCREEN_WIDTH = 1000
 SCREEN_HEIGHT = 500
@@ -24,7 +25,7 @@ class GameView(arcade.View):
 
     def __init__(self):
         super().__init__()
-
+        #Create and assign varibles
         self.player_list = arcade.SpriteList()
         self.ground_list = arcade.SpriteList()
         self.collision_list = arcade.SpriteList()
@@ -75,7 +76,7 @@ class GameView(arcade.View):
             ground.position = coordinate
             self.ground_list.append(ground)
 
-        #Collision set up
+        #Collision boxes set up
         coordinate_list2 = [[511,76],
                            [779,76],
                            [999,76],
@@ -98,10 +99,11 @@ class GameView(arcade.View):
             self.collision_list.append(collision)
 
     def on_show(self):
+        #set background colour
        arcade.set_background_color(arcade.csscolor.MAROON)
 
     def on_draw(self):
-
+        #Draw all sprites and text
         arcade.start_render()
         self.collision_list.draw()
         self.ground_list.draw()
@@ -112,16 +114,10 @@ class GameView(arcade.View):
                          arcade.csscolor.WHITE, 20)
 
     def on_key_press(self, key, modifiers):
+        #Event when key is pressed
         if key == arcade.key.SPACE:
             if self.physics_engine.can_jump():
                 self.player_sprite.change_y = PLAYER_JUMP_SPEED
-
-    def on_key_release(self, key, modifiers):
-
-        if key == arcade.key.A:
-            self.player_sprite.change_x = 0
-        elif key == arcade.key.D:
-            self.player_sprite.change_x = 0
 
     def on_update(self, delta_time):
         self.player_sprite.change_x = PLAYER_MOVEMENT_SPEED
