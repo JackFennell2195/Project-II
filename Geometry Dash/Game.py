@@ -1,6 +1,7 @@
 import arcade 
 import tensorflow as tf
-import numpy as np
+import numpy as np 
+
 #Constants
 SCREEN_WIDTH = 1000
 SCREEN_HEIGHT = 500
