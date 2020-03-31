@@ -11,6 +11,8 @@ GROUND_SCALING = 1
 COLLISION_SCALING = 1.1
 OBSTACLE_SCALING = 1.1
 
+LOOP_BORDER_SCALING = 1.1
+
 PLAYER_MOVEMENT_SPEED = 4
 GRAVITY = 1
 PLAYER_JUMP_SPEED = 18
@@ -29,6 +31,7 @@ class GameView(arcade.View):
         self.player_list = arcade.SpriteList()
         self.ground_list = arcade.SpriteList()
         self.collision_list = arcade.SpriteList()
+        self.loop_list = arcade.SpriteList()
 
         self.player_sprite = None
         self.physics_engine = None
@@ -41,12 +44,12 @@ class GameView(arcade.View):
         #Player set up list
         self.player_sprite = arcade.Sprite("Geometry Dash/Assets/Images/player.png", CHARACTER_SCALING)
         self.player_sprite.center_x = 50
-        self.player_sprite.center_y = 100
+        self.player_sprite.center_y = 78
         self.player_list.append(self.player_sprite)
 
         #Ground set up list
         
-        for x in range(-150, 7500, 50):
+        for x in range(-150, 6500, 50):
             ground = arcade.Sprite("Geometry Dash/Assets/Images/ground.png", GROUND_SCALING)
             ground.center_x = x
             ground.center_y = 25
@@ -98,6 +101,11 @@ class GameView(arcade.View):
             collision.position = coordinate
             self.collision_list.append(collision)
 
+        loop = arcade.Sprite("Geometry Dash/Assets/Images/loop_border.png", LOOP_BORDER_SCALING)
+        loop.center_x = 4800
+        loop.center_y = 100
+        self.loop_list.append(loop)
+
     def on_show(self):
         #set background colour
        arcade.set_background_color(arcade.csscolor.MAROON)
@@ -106,6 +114,7 @@ class GameView(arcade.View):
         #Draw all sprites and text
         arcade.start_render()
         self.collision_list.draw()
+        self.loop_list.draw()
         self.ground_list.draw()
         self.player_list.draw()
 
@@ -126,13 +135,17 @@ class GameView(arcade.View):
         changed = False
 
         player_hit_list = arcade.check_for_collision_with_list(self.player_sprite,self.collision_list)
-
         for collision in player_hit_list:
             game_over_view = GameOverView()
             self.player_sprite.center_x = 50
-            self.player_sprite.center_y = 100
+            self.player_sprite.center_y = 78
             self.window.show_view(game_over_view)
 
+        loop_hit_list = arcade.check_for_collision_with_list(self.player_sprite,self.loop_list)
+        for collision in loop_hit_list:
+            self.player_sprite.center_x = 0
+            self.player_sprite.center_y = 78
+       
 
         left_boundary = self.view_left + LEFT_VIEWPORT_MARGIN
         if self.player_sprite.left <left_boundary:
@@ -153,7 +166,7 @@ class GameView(arcade.View):
         if self.player_sprite.bottom < bottom_boundary:
             self.view_bottom -= bottom_boundary -self.player_sprite.bottom
             changed = True
-        
+
         if changed:
             self.view_bottom = int(self.view_bottom)
             self.view_left = int(self.view_left)
