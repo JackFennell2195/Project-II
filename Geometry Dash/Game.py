@@ -1,5 +1,13 @@
 import arcade 
 import numpy as np 
+import csv
+
+import threading
+
+from numpy.random import seed
+from numpy.random import randint
+#seed random number generator
+seed(1)
 
 #Constants
 SCREEN_WIDTH = 1000
@@ -15,12 +23,15 @@ LOOP_BORDER_SCALING = 1.1
 
 PLAYER_MOVEMENT_SPEED = 4
 GRAVITY = 1
-PLAYER_JUMP_SPEED = 18
+PLAYER_JUMP_SPEED = 19
 
 LEFT_VIEWPORT_MARGIN = 150
 RIGHT_VIEWPORT_MARGIN = 150
 BOTTOM_VIEWPORT_MARGIN = 50
 TOP_VIEWPORT_MARGIN = 100
+
+
+
 
 
 class GameView(arcade.View):
@@ -40,6 +51,10 @@ class GameView(arcade.View):
         self.view_left = 0
 
         self.score = 0
+        
+        self.jump = 0
+
+        self.closet_block = ()
 
         #Player set up list
         self.player_sprite = arcade.Sprite("Geometry Dash/Assets/Images/player.png", CHARACTER_SCALING)
@@ -56,46 +71,49 @@ class GameView(arcade.View):
             self.ground_list.append(ground)
 
         self.physics_engine = arcade.PhysicsEnginePlatformer(self.player_sprite, self.ground_list, GRAVITY)
-    
+        
+        values = randint(7, 92, 16)*51
+        np.sort(values)
+        
         #Obstacles set up 
-        coordinate_list = [[512,78],
-                           [780,78],
-                           [1000,78],
-                           [1239,78],
-                           [1500,78],
-                           [1750,78],
-                           [2050,78],
-                           [2280,78],
-                           [2510,78],
-                           [2780,78],
-                           [3100,78],
-                           [3290,78],
-                           [3560,78],
-                           [3830,78],
-                           [4210,78],
-                           [4560,78],]
+        coordinate_list = [[values[0],78],
+                          [values[1],78],
+                          [values[2],78],
+                          [values[3],78],
+                          [values[4],78],
+                          [values[5],78],
+                          [values[6],78],
+                          [values[7],78],
+                          [values[8],78],
+                          [values[9],78],
+                          [values[10],78],
+                          [values[11],78],
+                          [values[12],78],
+                          [values[13],78],
+                          [values[14],78],
+                          [values[15],78],]
         for coordinate in coordinate_list:
             ground = arcade.Sprite("Geometry Dash/Assets/Images/obstacle.png", OBSTACLE_SCALING)
             ground.position = coordinate
             self.ground_list.append(ground)
 
         #Collision boxes set up
-        coordinate_list2 = [[511,76],
-                           [779,76],
-                           [999,76],
-                           [1238,76],
-                           [1499,76],
-                           [1749,76],
-                           [2049,76],
-                           [2279,76],
-                           [2509,76],
-                           [2779,76],
-                           [3099,76],
-                           [3289,76],
-                           [3559,76],
-                           [3829,76],
-                           [4209,76],
-                           [4559,76],]
+        coordinate_list2 = [[values[0]-1,75],
+                           [values[1]-1,75],
+                           [values[2]-1,75],
+                           [values[3]-1,75],
+                           [values[4]-1,75],
+                           [values[5]-1,75],
+                           [values[6]-1,75],
+                           [values[7]-1,75],
+                           [values[8]-1,75],
+                           [values[9]-1,75],
+                           [values[10]-1,75],
+                           [values[11]-1,75],
+                           [values[12]-1,75],
+                           [values[13]-1,75],
+                           [values[14]-1,75],
+                           [values[15]-1,75],]
         for coordinate in coordinate_list2:
             collision = arcade.Sprite("Geometry Dash/Assets/Images/collision.png", COLLISION_SCALING)
             collision.position = coordinate
@@ -105,7 +123,9 @@ class GameView(arcade.View):
         loop.center_x = 4800
         loop.center_y = 100
         self.loop_list.append(loop)
+        #self.write_to_csv() 
 
+    
     def on_show(self):
         #set background colour
        arcade.set_background_color(arcade.csscolor.MAROON)
@@ -117,7 +137,6 @@ class GameView(arcade.View):
         self.loop_list.draw()
         self.ground_list.draw()
         self.player_list.draw()
-
         score_text = f"Score: {self.window.score}"
         arcade.draw_text(score_text, 10 + self.view_left, 460 + self.view_bottom,
                          arcade.csscolor.WHITE, 20)
@@ -127,12 +146,20 @@ class GameView(arcade.View):
         if key == arcade.key.SPACE:
             if self.physics_engine.can_jump():
                 self.player_sprite.change_y = PLAYER_JUMP_SPEED
-
+                self.jump = 1
+                self.write_to_csv(self.player_sprite)
+                self.jump = 0
+                
+           
     def on_update(self, delta_time):
+
         self.player_sprite.change_x = PLAYER_MOVEMENT_SPEED
         self.physics_engine.update()
         self.window.score +=1
         changed = False
+        self.closet_block = arcade.get_closest_sprite(self.player_sprite,self.collision_list)
+        if(delta_time% 5 == 0):
+            self.write_to_csv(self.player_sprite)
 
         player_hit_list = arcade.check_for_collision_with_list(self.player_sprite,self.collision_list)
         for collision in player_hit_list:
@@ -174,7 +201,11 @@ class GameView(arcade.View):
             arcade.set_viewport(self.view_left,SCREEN_WIDTH+self.view_left,
                                 self.view_bottom,SCREEN_HEIGHT + self.view_bottom)
 
-
+    def write_to_csv(self,player_sprite):
+        with open('dataset.csv','a',newline='') as file:
+            writer = csv.writer(file)
+            writer.writerow([self.jump, player_sprite.center_x, player_sprite.center_y, int(self.closet_block[1])])  
+     
 class GameOverView(arcade.View):
     def __init__(self):
         super().__init__()

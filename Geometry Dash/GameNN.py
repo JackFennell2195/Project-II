@@ -10,13 +10,13 @@ data, labels = load_csv('dataset.csv', target_column=0,
                         categorical_labels=True, n_classes=2)
 
 # Build neural network 
-network = tflearn.input_data(shape=[None, 2])
-network = tflearn.fully_connected(network,2)
+network = tflearn.input_data(shape=[None, 3])
+network = tflearn.fully_connected(network,2,activation='softmax')
 network = tflearn.regression(network)
 # Define model
 model = tflearn.DNN(network)
 
-model.fit(data, labels, n_epoch=5, show_metric=True, batch_size=4)
+model.fit(data, labels, n_epoch=5, batch_size=4, show_metric=True)
 
 
 
