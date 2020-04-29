@@ -1,9 +1,9 @@
 import arcade 
 import numpy as np 
 import csv
+import tflearn
 
-import threading
-
+from arcade.gui import *
 from numpy.random import seed
 from numpy.random import randint
 #seed random number generator
@@ -21,7 +21,7 @@ OBSTACLE_SCALING = 1.1
 
 LOOP_BORDER_SCALING = 1.1
 
-PLAYER_MOVEMENT_SPEED = 4
+PLAYER_MOVEMENT_SPEED = 5
 GRAVITY = 1
 PLAYER_JUMP_SPEED = 19
 
@@ -32,7 +32,43 @@ TOP_VIEWPORT_MARGIN = 100
 
 
 
+class GameMenu(arcade.View):
+    def __init__(self):
+        super().__init__()
+        self.theme = None
+        self.pause = False
+        self.setup_theme()
+        self.set_buttons()
+    def on_show(self):
+        arcade.set_background_color(arcade.color.AZURE)
+        
 
+    def set_button_textures(self):
+        normal = "Geometry Dash/Assets/Images/button.png"
+        hover = "Geometry Dash/Assets/Images/buttonHover.png"
+        clicked = "Geometry Dash/Assets/Images/buttonClicked.png"
+        locked = "Geometry Dash/Assets/Images/button.png"
+        self.theme.add_button_textures(normal,hover,clicked,locked)
+
+    def setup_theme(self):
+        self.theme = Theme()
+        self.theme.set_font(20, arcade.color.WHITE)
+        self.set_button_textures()
+
+    def set_buttons(self):
+        self.button_list.append(PlayButton(self,500,360,200,60,theme= self.theme))
+        self.button_list.append(AI_GA_PlayButton(self,500,240,200,60,theme= self.theme))
+        self.button_list.append(AI_BP_PlayButton(self,500,180,200,60,theme= self.theme))
+    def on_draw(self):
+        arcade.start_render()
+        super().on_draw()
+
+    def update(self, delta_time):
+        if self.pause:
+            self.pause = False
+            game_view = GameView()
+            self.window.show_view(game_view)
+          
 
 class GameView(arcade.View):
 
@@ -55,7 +91,9 @@ class GameView(arcade.View):
         self.jump = 0
 
         self.closet_block = ()
-
+        self.AI = False	
+        self.capture = False
+       
         #Player set up list
         self.player_sprite = arcade.Sprite("Geometry Dash/Assets/Images/player.png", CHARACTER_SCALING)
         self.player_sprite.center_x = 50
@@ -138,17 +176,31 @@ class GameView(arcade.View):
         self.ground_list.draw()
         self.player_list.draw()
         score_text = f"Score: {self.window.score}"
+        capture_text = f"Press C to capture data"
+        cancel_text = f"Press X to stop capturing data"
         arcade.draw_text(score_text, 10 + self.view_left, 460 + self.view_bottom,
                          arcade.csscolor.WHITE, 20)
+        arcade.draw_text(capture_text, 10 + self.view_left, 440 + self.view_bottom,
+                         arcade.csscolor.WHITE, 12)
+        arcade.draw_text(cancel_text, 10 + self.view_left, 420 + self.view_bottom,
+                         arcade.csscolor.WHITE, 12)
 
     def on_key_press(self, key, modifiers):
-        #Event when key is pressed
+        #Event when key is pressed 
+        if key == arcade.key.C:
+            self.capture = True
+
+        if key == arcade.key.X:
+            self.capture = True
+
         if key == arcade.key.SPACE:
             if self.physics_engine.can_jump():
                 self.player_sprite.change_y = PLAYER_JUMP_SPEED
                 self.jump = 1
-                self.write_to_csv(self.player_sprite)
+                if self.capture == True:
+                    self.write_to_csv(self.player_sprite)
                 self.jump = 0
+       
                 
            
     def on_update(self, delta_time):
@@ -158,7 +210,8 @@ class GameView(arcade.View):
         self.window.score +=1
         changed = False
         self.closet_block = arcade.get_closest_sprite(self.player_sprite,self.collision_list)
-        if(delta_time% 5 == 0):
+        
+        if self.capture == True:
             self.write_to_csv(self.player_sprite)
 
         player_hit_list = arcade.check_for_collision_with_list(self.player_sprite,self.collision_list)
@@ -204,8 +257,13 @@ class GameView(arcade.View):
     def write_to_csv(self,player_sprite):
         with open('dataset.csv','a',newline='') as file:
             writer = csv.writer(file)
-            writer.writerow([self.jump, player_sprite.center_x, player_sprite.center_y, int(self.closet_block[1])])  
-     
+            writer.writerow([player_sprite.center_x, player_sprite.center_y, int(self.closet_block[1]),self.jump])  
+    
+    def read_csv(self):
+        with open('weights.csv''r',newline='') as weight_file:
+            reader = csv.reader(weight_file)
+           
+
 class GameOverView(arcade.View):
     def __init__(self):
         super().__init__()
@@ -214,11 +272,10 @@ class GameOverView(arcade.View):
         arcade.set_background_color(arcade.color.BLACK)
     def on_draw(self):
         arcade.start_render()
-        game_view = GameView()
         arcade.draw_text("Game Over", 230 ,360,
                         arcade.color.WHITE,50)
-        arcade.draw_text("Click to Restart", 230 ,280 ,
-                        arcade.color.WHITE,40)
+        arcade.draw_text("Click to Return to Menu", 230 ,280 ,
+                        arcade.color.WHITE,32)
         score_text = f"Score: {self.window.score}"
         arcade.draw_text(score_text, 230, 200,
                          arcade.csscolor.WHITE, 30)
@@ -226,10 +283,49 @@ class GameOverView(arcade.View):
     def on_mouse_press(self, _x, _y, _button, _modifiers):
         self.window.score = 0
         game_view = GameView()
+        
         self.window.show_view(game_view)
+        
 
+class PlayButton(TextButton):
+    def __init__(self, game, x=0, y=0, width=0, height=0, text="PLAY", theme=None):
+        super().__init__(x, y, width, height, text, theme=theme)
+        self.game = game
 
+    def on_press(self):
+        self.pressed = True
+       
+    def on_release(self):
+        if self.pressed:
+            self.game.pause = True
+            self.pressed = False
+           
 
+class AI_GA_PlayButton(TextButton):
+    def __init__(self, game, x=0, y=0, width=0, height=0, text="GA PLAY", theme=None):
+        super().__init__(x, y, width, height, text, theme=theme)
+        self.game = game
+
+    def on_press(self):
+        self.pressed = True
+
+    def on_release(self):
+        if self.pressed:
+            self.game.pause = True
+            self.pressed = False
+            
+class AI_BP_PlayButton(TextButton):
+    def __init__(self, game, x=0, y=0, width=0, height=0, text="BP PLAY", theme=None):
+        super().__init__(x, y, width, height, text, theme=theme)
+        self.game = game
+
+    def on_press(self):
+        self.pressed = True
+
+    def on_release(self):
+        if self.pressed:
+            self.game.pause = True
+            self.pressed = False
 def main():
     window = arcade.Window(SCREEN_WIDTH,SCREEN_HEIGHT,SCREEN_TITLE)
     window.score = 0 
