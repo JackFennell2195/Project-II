@@ -30,8 +30,6 @@ RIGHT_VIEWPORT_MARGIN = 150
 BOTTOM_VIEWPORT_MARGIN = 50
 TOP_VIEWPORT_MARGIN = 100
 
-
-
 class GameMenu(arcade.View):
     def __init__(self):
         super().__init__()
@@ -91,9 +89,20 @@ class GameView(arcade.View):
         self.jump = 0
 
         self.closet_block = ()
+        self.Player = True
         self.AI = False	
         self.capture = False
-       
+
+        if self.AI == True:
+            input_data = tflearn.input_data(shape=[None, 3])
+            hidden_layer = tflearn.fully_connected(input_data, 6)
+            output = tflearn.fully_connected(hidden_layer,2,activation='softmax')
+
+            network = tflearn.regression(output)
+            # Define model
+            self.model = tflearn.DNN(network)
+            self.load_model()
+
         #Player set up list
         self.player_sprite = arcade.Sprite("Geometry Dash/Assets/Images/player.png", CHARACTER_SCALING)
         self.player_sprite.center_x = 50
@@ -162,11 +171,15 @@ class GameView(arcade.View):
         loop.center_y = 100
         self.loop_list.append(loop)
         #self.write_to_csv() 
-
     
     def on_show(self):
         #set background colour
        arcade.set_background_color(arcade.csscolor.MAROON)
+
+    def load_model(self):
+        self.model.load('Model_1')
+        print("loaded model") 
+        
 
     def on_draw(self):
         #Draw all sprites and text
@@ -193,13 +206,14 @@ class GameView(arcade.View):
         if key == arcade.key.X:
             self.capture = True
 
-        if key == arcade.key.SPACE:
-            if self.physics_engine.can_jump():
-                self.player_sprite.change_y = PLAYER_JUMP_SPEED
-                self.jump = 1
-                if self.capture == True:
-                    self.write_to_csv(self.player_sprite)
-                self.jump = 0
+        if self.Player == True:
+            if key == arcade.key.SPACE:
+                if self.physics_engine.can_jump():
+                    self.player_sprite.change_y = PLAYER_JUMP_SPEED
+                    self.jump = 1
+                    if self.capture == True:
+                        self.write_to_csv(self.player_sprite)
+                    self.jump = 0
        
                 
            
@@ -210,7 +224,8 @@ class GameView(arcade.View):
         self.window.score +=1
         changed = False
         self.closet_block = arcade.get_closest_sprite(self.player_sprite,self.collision_list)
-        
+    
+
         if self.capture == True:
             self.write_to_csv(self.player_sprite)
 
@@ -274,7 +289,7 @@ class GameOverView(arcade.View):
         arcade.start_render()
         arcade.draw_text("Game Over", 230 ,360,
                         arcade.color.WHITE,50)
-        arcade.draw_text("Click to Return to Menu", 230 ,280 ,
+        arcade.draw_text("Click to Restart", 230 ,280 ,
                         arcade.color.WHITE,32)
         score_text = f"Score: {self.window.score}"
         arcade.draw_text(score_text, 230, 200,
